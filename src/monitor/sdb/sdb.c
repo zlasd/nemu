@@ -37,6 +37,38 @@ static int cmd_q(char *args) {
   return -1;
 }
 
+static int cmd_si(char *args) {
+  int step;
+  sscanf(args, "%d", &step);
+  cpu_exec(step);
+  return 0;
+}
+
+static int cmd_info(char *args) {
+  printf("TODO: cmd_info\n");
+  return 0;
+}
+
+static int cmd_x(char *args) {
+  printf("TODO: cmd_x\n");
+  return 0;
+}
+
+static int cmd_p(char *args) {
+  printf("TODO: cmd_p\n");
+  return 0;
+}
+
+static int cmd_w(char *args) {
+  printf("TODO: cmd_w\n");
+  return 0;
+}
+
+static int cmd_d(char *args) {
+  printf("TODO: cmd_d\n");
+  return 0;
+}
+
 static int cmd_help(char *args);
 
 static struct {
@@ -49,7 +81,12 @@ static struct {
   { "q", "Exit NEMU", cmd_q },
 
   /* TODO: Add more commands */
-
+  { "si", "Execute single step of the program", cmd_si},
+  { "info", "Print program state", cmd_info},
+  { "x", "Scan the memory and print the value", cmd_x},
+  { "p", "Evaluate expression's value", cmd_p},
+  { "w", "Set breakpoints at some memory address", cmd_w},
+  { "d", "Delete breakpoints", cmd_d},
 };
 
 #define NR_CMD ARRLEN(cmd_table)
