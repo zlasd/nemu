@@ -45,7 +45,7 @@ static int cmd_si(char *args) {
 }
 
 static int cmd_info(char *args) {
-  printf("TODO: cmd_info\n");
+  isa_reg_display();
   return 0;
 }
 
