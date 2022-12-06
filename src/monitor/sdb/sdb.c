@@ -2,6 +2,7 @@
 #include <cpu/cpu.h>
 #include <readline/readline.h>
 #include <readline/history.h>
+#include <memory/paddr.h>
 #include "sdb.h"
 
 static int is_batch_mode = false;
@@ -38,6 +39,10 @@ static int cmd_q(char *args) {
 }
 
 static int cmd_si(char *args) {
+  if (args == NULL) {
+    printf("invalid command\n");
+    return 0;
+  }
   int step;
   sscanf(args, "%d", &step);
   cpu_exec(step);
@@ -45,12 +50,35 @@ static int cmd_si(char *args) {
 }
 
 static int cmd_info(char *args) {
+  if (args == NULL) {
+    printf("invalid command\n");
+    return 0;
+  }
+  char sub_cmd[7];
+  sscanf(args, "%s", sub_cmd);
   isa_reg_display();
   return 0;
 }
 
 static int cmd_x(char *args) {
-  printf("TODO: cmd_x\n");
+  if (args == NULL) {
+    printf("invalid command\n");
+    return 0;
+  }
+  int i;
+  paddr_t addr;
+  char* tok = strtok(args, " ");
+  sscanf(tok, "%d", &i);
+  tok = strtok(NULL, " ");
+  if (tok == NULL) {
+    printf("invalid command\n");
+    return 0;
+  }
+  sscanf(tok, FMT_PADDR, &addr);
+
+  for (paddr_t c = addr; i > 0; c+=sizeof(word_t), i--) {
+    printf(FMT_PADDR"\t"FMT_WORD"\n", c, paddr_read(c, sizeof(word_t)));
+  }
   return 0;
 }
 
