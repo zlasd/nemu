@@ -83,7 +83,13 @@ static int cmd_x(char *args) {
 }
 
 static int cmd_p(char *args) {
-  printf("TODO: cmd_p\n");
+  bool succ;
+  word_t ret = expr(args, &succ);
+  if (succ) {
+    printf(FMT_WORD"\n", ret);
+  } else {
+    printf("bad expression! %s\n", args);
+  }
   return 0;
 }
 
