@@ -7,7 +7,12 @@ typedef struct watchpoint {
   struct watchpoint *next;
 
   /* TODO: Add more members if necessary */
-
+  char *expr;
+  word_t old_val;
+  int type;
+  int disp;
+  int enable;
+  int hits;
 } WP;
 
 static WP wp_pool[NR_WP] = {};
@@ -25,4 +30,37 @@ void init_wp_pool() {
 }
 
 /* TODO: Implement the functionality of watchpoint */
+WP* new_wp() {
+  if (free_ == NULL) {
+    assert(0);
+  }
+  WP* cur = free_;
+  free_ = free_->next;
+  cur->next = head;
+  head = cur;
+  return cur;
+}
+
+void free_wp(WP *wp) {
+  if (wp == head) {
+    head = wp->next;
+    wp->next = free_;
+    free_ = wp;
+    return;
+  }
+
+  WP *prev = head;
+  while (prev != NULL) {
+    if (prev->next == wp) {
+      break;
+    }
+    prev = prev->next;
+  }
+  if (prev->next != wp) {
+    assert(0);
+  }
+  prev->next = wp->next;
+  wp->next = free_;
+  free_ = wp;
+}
 
