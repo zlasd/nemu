@@ -5,13 +5,17 @@
  */
 #include <regex.h>
 
+#include "memory/vaddr.h"
+
 enum {
   TK_NOTYPE = 256, TK_EQ,
 
   /* TODO: Add more token types */
   TK_PLUS, TK_MINUS, TK_MUL, TK_DIV,
   TK_LEFT_PAR, TK_RIGHT_PAR,
-  TK_INT,
+  TK_DEC, TK_HEX, TK_REG,
+  TK_NEQ, TK_AND,
+  TK_NEG, TK_DEREF,
 };
 
 static struct rule {
@@ -30,8 +34,12 @@ static struct rule {
   {"/", TK_DIV},        // dividend
   {"\\(", TK_LEFT_PAR},  // left parenthese
   {"\\)", TK_RIGHT_PAR}, // right parenthese
-  {"[0-9]{1,10}", TK_INT}, // decimal integer
+  {"0x[0-9a-fA-F]{1,10}", TK_HEX}, // hexical integer
+  {"[0-9]{1,10}", TK_DEC}, // decimal integer
+  {"\\$[\\$atsrg]{1,2}[0-9]{0,2}", TK_REG},     // register
   {"==", TK_EQ},        // equal
+  {"!=", TK_NEQ},       // not equal
+  {"&&", TK_AND},       // bool and
 };
 
 #define NR_REGEX ARRLEN(rules)
@@ -162,6 +170,30 @@ bool check_parenthese(int p, int q) {
   return true;
 }
 
+word_t eval_single_token(int n) {
+  word_t ret;
+  bool succ;
+  switch (tokens[n].type)
+  {
+  case TK_DEC:
+    sscanf(tokens[n].str, "%d", &ret);
+    return ret;
+  case TK_HEX:
+    sscanf(tokens[n].str, "0x%x", &ret);
+    return ret;
+  case TK_REG:
+    ret = isa_reg_str2val(tokens[n].str+1, &succ);  // eat the prefix '$'
+    if (!succ) {
+      eval_errno = -5;  // read register error
+      return -1;
+    }
+    return ret;
+  default:
+    eval_errno = -6;  // eval single value failed
+    return -1;
+  }
+}
+
 word_t eval(int p, int q) {
   word_t ret;
   if (p > q) {
@@ -169,7 +201,7 @@ word_t eval(int p, int q) {
     return -1;
   }
   if (p == q) {
-    ret = atoi(tokens[p].str);
+    sscanf(tokens[p].str, tokens[p].type == TK_DEC?"%d":"0x%x", &ret);
     return ret;
   }
   if (check_parenthese(p, q) == true) {
@@ -178,8 +210,14 @@ word_t eval(int p, int q) {
   if (eval_errno != 0) {
     return -1;
   }
-  if (tokens[p].type == TK_MINUS) {
+
+  switch (tokens[p].type)
+  {
+  case TK_NEG:
     return -eval(p+1, q);
+  case TK_DEREF:
+    ret = eval(p+1, q);
+    return vaddr_read(ret, 4);
   }
 
   int pivot = find_pivot(p, q);
@@ -198,6 +236,9 @@ word_t eval(int p, int q) {
   case TK_MINUS: return val1 - val2;
   case TK_MUL: return val1 * val2;
   case TK_DIV: return val1 / val2;
+  case TK_EQ: return val1 == val2;
+  case TK_NEQ: return val1 != val2;
+  case TK_AND: return val1 && val2;
   default:
     eval_errno = -2;  // bad expression
     break;
@@ -205,10 +246,32 @@ word_t eval(int p, int q) {
   return -1;
 }
 
+bool check_unary_op(int i) {
+  return i == 0 ||
+    tokens[i - 1].type == TK_PLUS ||
+    tokens[i - 1].type == TK_MINUS ||
+    tokens[i - 1].type == TK_MUL ||
+    tokens[i - 1].type == TK_DIV ||
+    tokens[i - 1].type == TK_NEG ||
+    tokens[i - 1].type == TK_DEREF ||
+    tokens[i - 1].type == TK_EQ ||
+    tokens[i - 1].type == TK_NEQ ||
+    tokens[i - 1].type == TK_AND;
+}
+
 word_t expr(char *e, bool *success) {
   if (!make_token(e)) {
     *success = false;
     return 0;
+  }
+
+  for (int i = 0; i < nr_token; i++) {
+    if (tokens[i].type == TK_MUL && check_unary_op(i) ) {
+      tokens[i].type = TK_DEREF;
+    }
+    if (tokens[i].type == TK_MINUS && check_unary_op(i) ) {
+      tokens[i].type = TK_NEG;
+    }
   }
 
   /* TODO: Insert codes to evaluate the expression. */
