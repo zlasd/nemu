@@ -6,9 +6,12 @@
 #include "sdb.h"
 
 static int is_batch_mode = false;
+static int is_expr_mode = false;
 
 void init_regex();
 void init_wp_pool();
+
+extern int eval_errno;
 
 /* We use the `readline' library to provide more flexibility to read from stdin. */
 static char* rl_gets() {
@@ -35,6 +38,7 @@ static int cmd_c(char *args) {
 
 
 static int cmd_q(char *args) {
+  nemu_state.state = NEMU_QUIT;
   return -1;
 }
 
@@ -152,9 +156,33 @@ void sdb_set_batch_mode() {
   is_batch_mode = true;
 }
 
+void sdb_set_expr_mode() {
+  is_expr_mode = true;
+}
+
+void expr_mode() {
+  uint32_t ans, ret;
+  char buf[1024];
+  bool succ;
+
+  while (EOF != scanf("%d %s", &ans, buf)) {
+    ret = expr(buf, &succ);
+    printf("%s=%d, expected=%d\n", buf, ret, ans);
+    if (!succ) {
+      printf("errno=%d\n", eval_errno);
+    }
+    assert(ans == ret);
+  }
+  nemu_state.state = NEMU_QUIT;
+}
+
 void sdb_mainloop() {
   if (is_batch_mode) {
     cmd_c(NULL);
+    return;
+  }
+  if (is_expr_mode) {
+    expr_mode();
     return;
   }
 

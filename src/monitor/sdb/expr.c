@@ -60,7 +60,7 @@ typedef struct token {
   char str[32];
 } Token;
 
-static Token tokens[32] __attribute__((used)) = {};
+static Token tokens[128] __attribute__((used)) = {};
 static int nr_token __attribute__((used))  = 0;
 int eval_errno = 0;
 
@@ -96,6 +96,7 @@ static bool make_token(char *e) {
               return false;
             }
             strncpy(tokens[nr_token].str, substr_start, substr_len);
+            tokens[nr_token].str[substr_len] = '\0';
             tokens[nr_token++].type = rules[i].token_type;
         }
 
@@ -116,11 +117,11 @@ static bool make_token(char *e) {
 int find_pivot(int p, int q) {
   int cnt = 0;
   int pos = -1;
-  for (int i = p; i <= q; i++) {
-    if (tokens[i].type == TK_LEFT_PAR) {
+  for (int i = q; i >= p; i--) {
+    if (tokens[i].type == TK_RIGHT_PAR) {
       cnt++;
     }
-    if (tokens[i].type == TK_RIGHT_PAR) {
+    if (tokens[i].type == TK_LEFT_PAR) {
       cnt--;
     }
     if (cnt != 0) {
@@ -142,7 +143,7 @@ bool check_parenthese(int p, int q) {
     eval_errno = 0;
     return false;
   }
-  for (int i = p; i <= q; i++) {
+  for (int i = p+1; i <= q-1; i++) {
     if (tokens[i].type == TK_LEFT_PAR) {
       cnt++;
     }
@@ -150,11 +151,12 @@ bool check_parenthese(int p, int q) {
       cnt--;
     }
     if (cnt < 0) {
-      eval_errno = -1;  // bad expression
+      return false;
     }
   }
   if (cnt != 0) {
-    eval_errno = -1;  // bad expression
+    eval_errno = -4;  // parenthese not match
+    return false;
   }
   eval_errno = 0;
   return true;
@@ -176,8 +178,15 @@ word_t eval(int p, int q) {
   if (eval_errno != 0) {
     return -1;
   }
+  if (tokens[p].type == TK_MINUS) {
+    return -eval(p+1, q);
+  }
 
   int pivot = find_pivot(p, q);
+  if (pivot == -1) {
+    eval_errno = -3;  // cannot find pivot op
+    return -1;
+  }
   Log("pivot token[%d] = \"%s\"", pivot, tokens[pivot].str);
   word_t val1 = eval(p, pivot-1);
   word_t val2 = eval(pivot+1, q);
