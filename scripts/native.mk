@@ -29,4 +29,11 @@ $(clean-tools):
 clean-tools: $(clean-tools)
 clean-all: clean distclean clean-tools
 
-.PHONY: run gdb run-env clean-tools clean-all $(clean-tools)
+expr: run-env
+	$(NEMU_EXEC) -e < input
+
+test: run-env
+	$(CXX) $(CFLAGS) $(CXXFLAGS) $(NEMU_HOME)/src/test/test.c -o $(NEMU_HOME)/src/test/test
+	$(NEMU_HOME)/src/test/test
+
+.PHONY: run gdb run-env clean-tools clean-all $(clean-tools) expr test
