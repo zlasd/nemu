@@ -34,7 +34,9 @@ static void trace_and_difftest(Decode *_this, vaddr_t dnpc) {
   if (g_print_step) { IFDEF(CONFIG_ITRACE, puts(_this->logbuf)); }
   IFDEF(CONFIG_DIFFTEST, difftest_step(_this->pc, dnpc));
 
+#ifdef CONFIG_WATCHPOINT
   if (head != NULL) { check_watchpoints(_this, dnpc); }
+#endif
 }
 
 #include <isa-exec.h>
@@ -130,6 +132,8 @@ void cpu_exec(uint64_t n) {
   }
 }
 
+
+#ifdef CONFIG_WATCHPOINT
 static void check_watchpoints(Decode *_this, vaddr_t dnpc) {
   WP *cur = head;
   bool succ;
@@ -144,3 +148,4 @@ static void check_watchpoints(Decode *_this, vaddr_t dnpc) {
     cur = cur->next;
   }
 }
+#endif

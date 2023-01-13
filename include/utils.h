@@ -54,8 +54,11 @@ uint64_t get_time();
 
 #define _Log(...) \
   do { \
-    printf(__VA_ARGS__); \
-    log_write(__VA_ARGS__); \
+    extern bool console_log_enable(); \
+    if (console_log_enable()) { \
+      printf(__VA_ARGS__); \
+      log_write(__VA_ARGS__); \
+    } \
   } while (0)
 
 

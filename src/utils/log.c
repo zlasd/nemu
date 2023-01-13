@@ -17,3 +17,7 @@ bool log_enable() {
   return MUXDEF(CONFIG_TRACE, (g_nr_guest_instr >= CONFIG_TRACE_START) &&
          (g_nr_guest_instr <= CONFIG_TRACE_END), false);
 }
+
+bool console_log_enable() {
+  return MUXDEF(CONFIG_PRINT_LOG, 1, 0);
+}
