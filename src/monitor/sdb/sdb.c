@@ -10,7 +10,6 @@ static int is_batch_mode = false;
 static int is_expr_mode = false;
 
 void init_regex();
-void init_wp_pool();
 
 extern int eval_errno;
 
@@ -59,9 +58,13 @@ static int cmd_info(char *args) {
     printf("invalid command\n");
     return 0;
   }
-  char sub_cmd[7];
-  sscanf(args, "%s", sub_cmd);
-  isa_reg_display();
+  if (strcmp(args, "r") == 0) {
+    isa_reg_display();
+    return 0;
+  }
+  if (strcmp(args, "w") == 0) {
+    display_watchpoint();
+  }
   return 0;
 }
 
@@ -100,7 +103,7 @@ static int cmd_p(char *args) {
 
 static int cmd_w(char *args) {
   bool succ;
-  expr(args, &succ);
+  word_t ret = expr(args, &succ);
   if (!succ) {
     printf("bad expression! %s\n", args);
     return 0;
@@ -109,13 +112,19 @@ static int cmd_w(char *args) {
   WP *w = new_wp();
   w->expr = (char*)malloc(strlen(args)+1);
   strcpy(w->expr, args);
-  w->old_val = 0;
+  w->old_val = ret;
   w->hits = 0;
   return 0;
 }
 
 static int cmd_d(char *args) {
-  printf("TODO: cmd_d\n");
+  if (args == NULL) {
+    printf("invalid command\n");
+    return 0;
+  }
+  int no;
+  sscanf(args, "%d", &no);
+  free_wp_by_no(no);
   return 0;
 }
 

@@ -52,5 +52,19 @@ void free_wp(WP *wp) {
   prev->next = wp->next;
   wp->next = free_;
   free_ = wp;
+  free(wp->expr);
 }
 
+void free_wp_by_no(int no) {
+  free_wp(&wp_pool[no]);
+}
+
+void display_watchpoint() {
+  printf("NO\texpr                \told_value\thits\n");
+  WP *cur = head;
+  while (cur != NULL) {
+    printf("%d\t%-20s\t"FMT_WORD"\t%d\n", cur->NO, cur->expr, cur->old_val, cur->hits);
+    cur = cur->next;
+  }
+  printf("\n");
+}
