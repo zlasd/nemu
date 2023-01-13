@@ -32,8 +32,10 @@ clean-all: clean distclean clean-tools
 expr: run-env
 	$(NEMU_EXEC) -e < input
 
+test_files = $(NEMU_HOME)/src/test/test.c
+test_files += $(NEMU_HOME)/src/monitor/sdb/watchpoint.c
 test: run-env
-	$(CXX) $(CFLAGS) $(CXXFLAGS) $(NEMU_HOME)/src/test/test.c -o $(NEMU_HOME)/src/test/test
+	$(CXX) $(CFLAGS) $(CXXFLAGS) $(test_files) -o $(NEMU_HOME)/src/test/test
 	$(NEMU_HOME)/src/test/test
 
 .PHONY: run gdb run-env clean-tools clean-all $(clean-tools) expr test
