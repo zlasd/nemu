@@ -4,6 +4,7 @@
 #include <readline/history.h>
 #include <memory/paddr.h>
 #include "sdb.h"
+#include "watchpoint.h"
 
 static int is_batch_mode = false;
 static int is_expr_mode = false;
@@ -89,16 +90,27 @@ static int cmd_x(char *args) {
 static int cmd_p(char *args) {
   bool succ;
   word_t ret = expr(args, &succ);
-  if (succ) {
-    printf(FMT_WORD"\n", ret);
-  } else {
+  if (!succ) {
     printf("bad expression! %s\n", args);
+    return 0;
   }
+  printf(FMT_WORD"\n", ret);
   return 0;
 }
 
 static int cmd_w(char *args) {
-  printf("TODO: cmd_w\n");
+  bool succ;
+  expr(args, &succ);
+  if (!succ) {
+    printf("bad expression! %s\n", args);
+    return 0;
+  }
+
+  WP *w = new_wp();
+  w->expr = (char*)malloc(strlen(args)+1);
+  strcpy(w->expr, args);
+  w->old_val = 0;
+  w->hits = 0;
   return 0;
 }
 
@@ -123,8 +135,8 @@ static struct {
   { "info", "Print program state", cmd_info},
   { "x", "Scan the memory and print the value", cmd_x},
   { "p", "Evaluate expression's value", cmd_p},
-  { "w", "Set breakpoints at some memory address", cmd_w},
-  { "d", "Delete breakpoints", cmd_d},
+  { "w", "Set watchpoints on expression", cmd_w},
+  { "d", "Delete watchpoints", cmd_d},
 };
 
 #define NR_CMD ARRLEN(cmd_table)

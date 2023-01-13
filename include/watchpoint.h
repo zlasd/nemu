@@ -10,9 +10,6 @@ typedef struct watchpoint {
   /* TODO: Add more members if necessary */
   char *expr;
   word_t old_val;
-  int type;
-  int disp;
-  int enable;
   int hits;
 } WP;
 

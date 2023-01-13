@@ -3,6 +3,7 @@
 #include <cpu/difftest.h>
 #include <isa-all-instr.h>
 #include <locale.h>
+#include "watchpoint.h"
 
 /* The assembly code of instructions executed is only output to the screen
  * when the number of instructions executed is less than this value.
@@ -20,6 +21,11 @@ rtlreg_t tmp_reg[4];
 
 void device_update();
 void fetch_decode(Decode *s, vaddr_t pc);
+word_t expr(char *e, bool *success);
+static void check_watchpoints(Decode *_this, vaddr_t dnpc);
+
+extern WP* head;
+
 
 static void trace_and_difftest(Decode *_this, vaddr_t dnpc) {
 #ifdef CONFIG_ITRACE_COND
@@ -27,6 +33,8 @@ static void trace_and_difftest(Decode *_this, vaddr_t dnpc) {
 #endif
   if (g_print_step) { IFDEF(CONFIG_ITRACE, puts(_this->logbuf)); }
   IFDEF(CONFIG_DIFFTEST, difftest_step(_this->pc, dnpc));
+
+  if (head != NULL) { check_watchpoints(_this, dnpc); }
 }
 
 #include <isa-exec.h>
@@ -119,5 +127,20 @@ void cpu_exec(uint64_t n) {
           nemu_state.halt_pc);
       // fall through
     case NEMU_QUIT: statistic();
+  }
+}
+
+static void check_watchpoints(Decode *_this, vaddr_t dnpc) {
+  WP *cur = head;
+  bool succ;
+  while (cur != NULL) {
+    word_t ret = expr(cur->expr, &succ);
+    if (ret != cur->old_val) {
+      cur->old_val = ret;
+      cur->hits++;
+      nemu_state.state = NEMU_STOP;
+      printf("program stop at watchpoint#%d, next step="FMT_PADDR"\n", cur->NO, dnpc);
+    }
+    cur = cur->next;
   }
 }

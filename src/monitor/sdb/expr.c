@@ -36,7 +36,7 @@ static struct rule {
   {"\\)", TK_RIGHT_PAR}, // right parenthese
   {"0x[0-9a-fA-F]{1,10}", TK_HEX}, // hexical integer
   {"[0-9]{1,10}", TK_DEC}, // decimal integer
-  {"\\$[\\$atsrg]{1,2}[0-9]{0,2}", TK_REG},     // register
+  {"\\$[\\$a-z]{1,2}[0-9]{0,2}", TK_REG},     // register
   {"==", TK_EQ},        // equal
   {"!=", TK_NEQ},       // not equal
   {"&&", TK_AND},       // bool and
@@ -125,6 +125,7 @@ static bool make_token(char *e) {
 int find_pivot(int p, int q) {
   int cnt = 0;
   int pos = -1;
+  int prior = 0;
   for (int i = q; i >= p; i--) {
     if (tokens[i].type == TK_RIGHT_PAR) {
       cnt++;
@@ -135,10 +136,16 @@ int find_pivot(int p, int q) {
     if (cnt != 0) {
       continue;
     }
-    if (tokens[i].type == TK_PLUS || tokens[i].type == TK_MINUS) {
+    if (tokens[i].type == TK_EQ || tokens[i].type == TK_NEQ) {
       return i;
     }
-    if (pos == -1 && (tokens[i].type == TK_MUL || tokens[i].type == TK_DIV)) {
+
+    if (prior < 2 && (tokens[i].type == TK_PLUS || tokens[i].type == TK_MINUS)) {
+      prior = 2;
+      pos = i;
+    }
+    if (prior < 1 && (tokens[i].type == TK_MUL || tokens[i].type == TK_DIV)) {
+      prior = 1;
       pos = i;
     }
   }
@@ -182,6 +189,10 @@ word_t eval_single_token(int n) {
     sscanf(tokens[n].str, "0x%x", &ret);
     return ret;
   case TK_REG:
+    if (strcmp(tokens[n].str, "$pc") == 0) {
+      ret = cpu.pc;
+      return ret;
+    }
     ret = isa_reg_str2val(tokens[n].str+1, &succ);  // eat the prefix '$'
     if (!succ) {
       eval_errno = -5;  // read register error
@@ -201,8 +212,7 @@ word_t eval(int p, int q) {
     return -1;
   }
   if (p == q) {
-    sscanf(tokens[p].str, tokens[p].type == TK_DEC?"%d":"0x%x", &ret);
-    return ret;
+    return eval_single_token(p);
   }
   if (check_parenthese(p, q) == true) {
     return eval(p+1, q-1);
