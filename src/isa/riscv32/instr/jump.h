@@ -12,26 +12,26 @@ def_EHelper(bne) {
   }
 }
 
-def_EHelper(blt) {
+def_EHelper(bltu) {
   if (*ddest < *dsrc1) {
     rtl_addi(s, &s->dnpc, &s->pc, id_src2->imm);
   }
 }
 
-def_EHelper(bge) {
+def_EHelper(bgeu) {
   if (*ddest >= *dsrc1) {
     rtl_addi(s, &s->dnpc, &s->pc, id_src2->imm);
   }
 }
 
-def_EHelper(bltu) {
-  if ((word_t)(*ddest) < (word_t)(*dsrc1)) {
+def_EHelper(blt) {
+  if ((sword_t)(*ddest) < (sword_t)(*dsrc1)) {
     rtl_addi(s, &s->dnpc, &s->pc, id_src2->imm);
   }
 }
 
-def_EHelper(bgeu) {
-  if ((word_t)(*ddest) >= (word_t)(*dsrc1)) {
+def_EHelper(bge) {
+  if ((sword_t)(*ddest) >= (sword_t)(*dsrc1)) {
     rtl_addi(s, &s->dnpc, &s->pc, id_src2->imm);
   }
 }
