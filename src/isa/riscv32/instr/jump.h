@@ -1,3 +1,41 @@
+#include "common.h"
+
+def_EHelper(beq) {
+  if (*ddest == *dsrc1) {
+    rtl_addi(s, &s->dnpc, &s->pc, id_src2->imm);
+  }
+}
+
+def_EHelper(bne) {
+  if (*ddest != *dsrc1) {
+    rtl_addi(s, &s->dnpc, &s->pc, id_src2->imm);
+  }
+}
+
+def_EHelper(blt) {
+  if (*ddest < *dsrc1) {
+    rtl_addi(s, &s->dnpc, &s->pc, id_src2->imm);
+  }
+}
+
+def_EHelper(bge) {
+  if (*ddest >= *dsrc1) {
+    rtl_addi(s, &s->dnpc, &s->pc, id_src2->imm);
+  }
+}
+
+def_EHelper(bltu) {
+  if ((word_t)(*ddest) < (word_t)(*dsrc1)) {
+    rtl_addi(s, &s->dnpc, &s->pc, id_src2->imm);
+  }
+}
+
+def_EHelper(bgeu) {
+  if ((word_t)(*ddest) >= (word_t)(*dsrc1)) {
+    rtl_addi(s, &s->dnpc, &s->pc, id_src2->imm);
+  }
+}
+
 def_EHelper(jal) {
   rtl_addi(s, ddest, &s->pc, 4);
   rtl_addi(s, &s->dnpc, &s->pc, id_src1->imm);
